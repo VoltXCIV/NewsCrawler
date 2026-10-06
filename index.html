@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsCrawler - Stock News Intelligence Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0f1419;
+            --bg-card: #1a1f2e;
+            --text-primary: #e1e8ed;
+            --text-secondary: #98a8b8;
+            --accent: #1da1f2;
+            --accent-hover: #1a91da;
+            --success: #31a24c;
+            --danger: #e0245e;
+            --border: #38444d;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation & Language Toggle */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-dark);
+            z-index: 100;
+        }
+
+        .nav-left {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.5px;
+        }
+
+        .lang-toggle {
+            display: flex;
+            gap: 0.5rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.25rem;
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn.active {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .lang-btn:hover:not(.active) {
+            color: var(--text-primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 4rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(29, 161, 242, 0.1) 0%, rgba(225, 232, 237, 0.05) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), #1da1f2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-badge {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            background-color: rgba(49, 162, 76, 0.2);
+            border: 1px solid var(--success);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .status-badge::before {
+            content: '🟢';
+            margin-right: 0.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .hero-tagline {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-top: 1.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Problem & Solution */
+        .problem-solution {
+            padding: 3rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .ps-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        .ps-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .ps-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .ps-card.chaos {
+            border-left: 4px solid var(--danger);
+        }
+
+        .ps-card.solution {
+            border-left: 4px solid var(--success);
+        }
+
+        .ps-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ps-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ps-card li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .ps-card.chaos li::before {
+            content: '✕';
+            position: absolute;
+            left: 0;
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        .ps-card.solution li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        /* Core Capabilities */
+        .capabilities {
+            padding: 3rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            border-top: 1px solid var(--border);
+        }
+
+        .cap-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        .cap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .cap-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .cap-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(29, 161, 242, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .cap-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cap-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent);
+        }
+
+        .cap-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Interactive Simulation */
+        .simulation {
+            padding: 3rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            border-top: 1px solid var(--border);
+        }
+
+        .sim-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        .sim-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .sim-input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .sim-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .sim-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .sim-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(29, 161, 242, 0.2);
+        }
+
+        .sim-btn {
+            padding: 0.75rem 2rem;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .sim-btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3);
+        }
+
+        .sim-btn:active {
+            transform: translateY(0);
+        }
+
+        .chat-box {
+            margin-top: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-user {
+            text-align: right;
+            margin-bottom: 0.75rem;
+        }
+
+        .chat-user-text {
+            display: inline-block;
+            background-color: var(--accent);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .chat-ai {
+            text-align: left;
+            margin-bottom: 0.75rem;
+        }
+
+        .chat-ai-text {
+            display: inline-block;
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 0.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-secondary);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.5; }
+            30% { opacity: 1; }
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 3rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero-tagline {
+                font-size: 1rem;
+            }
+
+            .ps-container {
+                grid-template-columns: 1fr;
+            }
+
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .cap-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation & Language Toggle -->
+    <nav>
+        <div class="nav-left">NewsCrawler</div>
+        <div class="lang-toggle">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="id">ID</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-icon">📰</div>
+        <h1>NewsCrawler</h1>
+        <div class="status-badge" id="statusText">Status: Active & Ready 24/7</div>
+        <p class="hero-tagline" id="heroTagline">
+            Intelligent stock news aggregation. Search any ticker and discover relevant market intelligence in seconds.
+        </p>
+    </section>
+
+    <!-- Problem & Solution -->
+    <section class="problem-solution">
+        <h2 class="ps-title" id="psTitle">The Challenge & Solution</h2>
+        <div class="ps-container">
+            <div class="ps-card chaos">
+                <h3>🌀 <span id="chaosTitle">The Chaos</span></h3>
+                <ul>
+                    <li id="chaos1">Manual checking across multiple news channels is exhausting</li>
+                    <li id="chaos2">Validating news correlation to stocks takes excessive time</li>
+                    <li id="chaos3">Information scattered, no single credible source</li>
+                </ul>
+            </div>
+            <div class="ps-card solution">
+                <h3>✨ <span id="solutionTitle">The Solution</span></h3>
+                <ul>
+                    <li id="solution1">Centralized crawling from credible financial news sources</li>
+                    <li id="solution2">AI-powered relevance filtering (30 days lookback)</li>
+                    <li id="solution3">Instant headlines + summaries with direct references</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Capabilities -->
+    <section class="capabilities">
+        <h2 class="cap-title" id="capTitle">Core Capabilities</h2>
+        <div class="cap-grid">
+            <div class="cap-card">
+                <div class="cap-icon">🔍</div>
+                <h4 id="cap1Title">Smart Ticker Search</h4>
+                <p id="cap1Desc">Input any stock ticker and get instant intelligence on company business model and market position.</p>
+            </div>
+            <div class="cap-card">
+                <div class="cap-icon">📡</div>
+                <h4 id="cap2Title">Credible Source Aggregation</h4>
+                <p id="cap2Desc">Automatically crawls established financial news channels, ensuring only trustworthy information surfaces.</p>
+            </div>
+            <div class="cap-card">
+                <div class="cap-icon">⚡</div>
+                <h4 id="cap3Title">Real-Time Correlation</h4>
+                <p id="cap3Desc">AI identifies news events potentially correlated with your ticker in the last 30 days with referenced links.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Simulation -->
+    <section class="simulation">
+        <h2 class="sim-title" id="simTitle">Try It Now</h2>
+        <div class="sim-container">
+            <div class="sim-input-group">
+                <input 
+                    type="text" 
+                    class="sim-input" 
+                    id="tickerInput" 
+                    placeholder="Enter ticker (e.g., TLKM, MITI, BBCA)"
+                    autocomplete="off"
+                >
+                <button class="sim-btn" id="searchBtn">Search</button>
+            </div>
+            <div class="chat-box" id="chatBox"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p id="footerText">Built with AI · AI Builder Bootcamp Showcase</p>
+    </footer>
+
+    <script>
+        // Language data
+        const translations = {
+            en: {
+                statusText: '🟢 Status: Active & Ready 24/7',
+                heroTagline: 'Intelligent stock news aggregation. Search any ticker and discover relevant market intelligence in seconds.',
+                psTitle: 'The Challenge & Solution',
+                chaosTitle: 'The Chaos',
+                chaos1: 'Manual checking across multiple news channels is exhausting',
+                chaos2: 'Validating news correlation to stocks takes excessive time',
+                chaos3: 'Information scattered, no single credible source',
+                solutionTitle: 'The Solution',
+                solution1: 'Centralized crawling from credible financial news sources',
+                solution2: 'AI-powered relevance filtering (30 days lookback)',
+                solution3: 'Instant headlines + summaries with direct references',
+                capTitle: 'Core Capabilities',
+                cap1Title: 'Smart Ticker Search',
+                cap1Desc: 'Input any stock ticker and get instant intelligence on company business model and market position.',
+                cap2Title: 'Credible Source Aggregation',
+                cap2Desc: 'Automatically crawls established financial news channels, ensuring only trustworthy information surfaces.',
+                cap3Title: 'Real-Time Correlation',
+                cap3Desc: 'AI identifies news events potentially correlated with your ticker in the last 30 days with referenced links.',
+                simTitle: 'Try It Now',
+                tickerPlaceholder: 'Enter ticker (e.g., TLKM, MITI, BBCA)',
+                searchBtn: 'Search',
+                footerText: 'Built with AI · AI Builder Bootcamp Showcase',
+                thinkingMsg: 'NewsCrawler is searching credible sources...',
+                resultHeader: 'Relevant News for',
+                noResults: 'No news found for this ticker in the last 30 days.',
+                source: 'Source:'
+            },
+            id: {
+                statusText: '🟢 Status: Aktif & Siap 24/7',
+                heroTagline: 'Agregasi berita saham cerdas. Cari ticker apa saja dan temukan intelijen pasar relevan dalam hitungan detik.',
+                psTitle: 'Tantangan & Solusi',
+                chaosTitle: 'Masalah',
+                chaos1: 'Pengecekan manual ke multi-kanal berita sangat melelahkan',
+                chaos2: 'Validasi korelasi berita ke saham memakan waktu lama',
+                chaos3: 'Informasi tersebar, tidak ada satu sumber terpercaya',
+                solutionTitle: 'Solusi',
+                solution1: 'Crawling terpusat dari sumber berita finansial kredibel',
+                solution2: 'Filtering relevansi berbasis AI (lookback 30 hari)',
+                solution3: 'Headline + summary instan dengan referensi langsung',
+                capTitle: 'Kemampuan Inti',
+                cap1Title: 'Pencarian Ticker Pintar',
+                cap1Desc: 'Masukkan ticker apa saja dan dapatkan intelijen instan tentang model bisnis dan posisi pasar perusahaan.',
+                cap2Title: 'Agregasi Sumber Kredibel',
+                cap2Desc: 'Secara otomatis crawl kanal berita finansial terpercaya, memastikan hanya informasi dapat dipercaya yang muncul.',
+                cap3Title: 'Korelasi Real-Time',
+                cap3Desc: 'AI mengidentifikasi peristiwa berita yang berpotensi berkorelasi dengan ticker Anda dalam 30 hari terakhir dengan tautan referensi.',
+                simTitle: 'Coba Sekarang',
+                tickerPlaceholder: 'Masukkan ticker (e.g., TLKM, MITI, BBCA)',
+                searchBtn: 'Cari',
+                footerText: 'Dibangun dengan AI · AI Builder Bootcamp Showcase',
+                thinkingMsg: 'NewsCrawler sedang mencari sumber kredibel...',
+                resultHeader: 'Berita Relevan untuk',
+                noResults: 'Tidak ada berita untuk ticker ini dalam 30 hari terakhir.',
+                source: 'Sumber:'
+            }
+        };
+
+        // Sample news data for demo
+        const sampleNews = {
+            TLKM: [
+                { headline: 'PT Telkom Expands 5G Coverage to Rural Areas', summary: 'PT Telkom Indonesia announced expansion of 5G network to reach 500+ rural communities, targeting improved connectivity and revenue diversification.', source: 'Reuters', date: '3 days ago' },
+                { headline: 'Telkom Subsidiary Secures Enterprise Contracts', summary: 'Telkom subsidiary signs multi-year contracts with major enterprises for data center and cloud services, reinforcing digital infrastructure play.', source: 'Bloomberg', date: '1 week ago' },
+                { headline: 'Indonesia Telecom Sector Growth Driven by Digitalization', summary: 'Indonesia\'s telecom industry sees 15% YoY growth as businesses and consumers increase digital adoption post-pandemic.', source: 'Financial Times', date: '2 weeks ago' }
+            ],
+            MITI: [
+                { headline: 'Mitra Innovations Reports Record Quarterly Revenue', summary: 'Mitra Innovations posted 25% growth in Q3 revenue, driven by increased demand for IT consulting and digital transformation services.', source: 'Jakarta Post', date: '5 days ago' },
+                { headline: 'Indonesia Tech Spending Accelerates', summary: 'IDC reports Indonesia\'s tech spending growth accelerates to 12% annually, benefiting domestic IT service providers like Mitra.', source: 'Tech Asia', date: '1 week ago' }
+            ],
+            BBCA: [
+                { headline: 'Bank Central Asia Reports Strong Earnings Growth', summary: 'BCA posts 18% YoY profit growth, supported by healthy loan growth and improved net interest margins in challenging rate environment.', source: 'Bloomberg', date: '4 days ago' },
+                { headline: 'Indonesia Banking Sector Shows Resilience Amid Rate Hikes', summary: 'Major Indonesian banks demonstrate resilience with stable deposit bases and controlled credit risk, supporting profitability outlook.', source: 'Reuters', date: '1 week ago' },
+                { headline: 'Digital Banking Adoption Surges in Southeast Asia', summary: 'Digital banking penetration in Indonesia reaches 35%, supporting fintech partnerships and new revenue streams for traditional banks like BCA.', source: 'McKinsey', date: '2 weeks ago' }
+            ]
+        };
+
+        let currentLang = 'en';
+
+        // Language toggle
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentLang = btn.dataset.lang;
+                document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                updateLanguage();
+            });
+        });
+
+        function updateLanguage() {
+            const trans = translations[currentLang];
+            for (const [key, value] of Object.entries(trans)) {
+                const el = document.getElementById(key);
+                if (el && el.placeholder !== undefined) {
+                    el.placeholder = value;
+                } else if (el) {
+                    el.textContent = value;
+                }
+            }
+        }
+
+        // Chat simulation
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const ticker = document.getElementById('tickerInput').value.toUpperCase().trim();
+            if (!ticker) {
+                alert(currentLang === 'en' ? 'Please enter a ticker' : 'Silakan masukkan ticker');
+                return;
+            }
+            simulateSearch(ticker);
+        });
+
+        document.getElementById('tickerInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('searchBtn').click();
+            }
+        });
+
+        function simulateSearch(ticker) {
+            const chatBox = document.getElementById('chatBox');
+            const trans = translations[currentLang];
+
+            // Clear previous chat
+            chatBox.innerHTML = '';
+
+            // User message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-message chat-user';
+            userMsg.innerHTML = `<div class="chat-user-text">Search ${ticker}</div>`;
+            chatBox.appendChild(userMsg);
+
+            // Typing indicator
+            setTimeout(() => {
+                const typingMsg = document.createElement('div');
+                typingMsg.className = 'chat-message chat-ai';
+                typingMsg.innerHTML = `<div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>`;
+                chatBox.appendChild(typingMsg);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                // AI response
+                setTimeout(() => {
+                    typingMsg.remove();
+                    const aiMsg = document.createElement('div');
+                    aiMsg.className = 'chat-message chat-ai';
+
+                    if (sampleNews[ticker]) {
+                        let html = `<div class="chat-ai-text"><strong>${trans.resultHeader} ${ticker}:</strong><br><br>`;
+                        sampleNews[ticker].forEach(item => {
+                            html += `<strong>• ${item.headline}</strong><br>`;
+                            html += `${item.summary}<br>`;
+                            html += `<em>${trans.source} ${item.source} · ${item.date}</em><br><br>`;
+                        });
+                        html += '</div>';
+                        aiMsg.innerHTML = html;
+                    } else {
+                        aiMsg.innerHTML = `<div class="chat-ai-text">${trans.noResults}</div>`;
+                    }
+                    chatBox.appendChild(aiMsg);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 2000);
+            }, 500);
+        }
+
+        // Initialize language
+        updateLanguage();
+    </script>
+</body>
+</html>
