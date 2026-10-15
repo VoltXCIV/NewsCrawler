@@ -420,6 +420,61 @@
             30% { opacity: 1; }
         }
 
+        /* Places Data (Supabase) */
+        .places-section {
+            padding: 3rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            border-top: 1px solid var(--border);
+        }
+
+        .places-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        .table-wrap {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+
+        #places {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        #places th,
+        #places td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        #places th {
+            color: var(--accent);
+            font-weight: 600;
+            background-color: var(--bg-dark);
+        }
+
+        #places td {
+            color: var(--text-secondary);
+        }
+
+        #places td a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        #places td a:hover {
+            text-decoration: underline;
+        }
+
         /* Footer */
         footer {
             text-align: center;
@@ -525,16 +580,29 @@
         <h2 class="sim-title" id="simTitle">Try It Now</h2>
         <div class="sim-container">
             <div class="sim-input-group">
-                <input 
-                    type="text" 
-                    class="sim-input" 
-                    id="tickerInput" 
+                <input
+                    type="text"
+                    class="sim-input"
+                    id="tickerInput"
                     placeholder="Enter ticker (e.g., TLKM, MITI, BBCA)"
                     autocomplete="off"
                 >
                 <button class="sim-btn" id="searchBtn">Search</button>
             </div>
             <div class="chat-box" id="chatBox"></div>
+        </div>
+    </section>
+
+    <!-- Places Data (Supabase) -->
+    <section class="places-section">
+        <h2 class="places-title" id="placesTitle">Data Tempat</h2>
+        <div class="table-wrap">
+            <table id="places">
+                <thead>
+                    <tr><th>Nama</th><th>Kategori</th><th>Rating</th><th>Review</th><th>Kota</th><th>Telepon</th><th>Maps</th></tr>
+                </thead>
+                <tbody><tr><td colspan="7">Memuat data...</td></tr></tbody>
+            </table>
         </div>
     </section>
 
@@ -572,7 +640,11 @@
                 thinkingMsg: 'NewsCrawler is searching credible sources...',
                 resultHeader: 'Relevant News for',
                 noResults: 'No news found for this ticker in the last 30 days.',
-                source: 'Source:'
+                source: 'Source:',
+                placesTitle: 'Places Data',
+                placesLoading: 'Loading data...',
+                placesEmpty: 'No data yet.',
+                placesError: 'Failed to load data.'
             },
             id: {
                 statusText: '🟢 Status: Aktif & Siap 24/7',
@@ -600,7 +672,11 @@
                 thinkingMsg: 'NewsCrawler sedang mencari sumber kredibel...',
                 resultHeader: 'Berita Relevan untuk',
                 noResults: 'Tidak ada berita untuk ticker ini dalam 30 hari terakhir.',
-                source: 'Sumber:'
+                source: 'Sumber:',
+                placesTitle: 'Data Tempat',
+                placesLoading: 'Memuat data...',
+                placesEmpty: 'Belum ada data.',
+                placesError: 'Gagal memuat data.'
             }
         };
 
@@ -711,8 +787,56 @@
             }, 500);
         }
 
-        // Initialize language
+        // ===== Places Data from Supabase =====
+        const SUPABASE_URL = 'https://idakcnwocvrujqxvsuav.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_Mlx9JtfEhb5UuUH5qwp58Q_s5sEe-8u'; // publishable key, BUKAN secret key
+
+        function setPlacesStatus(key) {
+            document.querySelector('#places tbody').innerHTML =
+                `<tr><td colspan="7">${translations[currentLang][key]}</td></tr>`;
+        }
+
+        async function loadPlaces() {
+            const tbody = document.querySelector('#places tbody');
+            try {
+                const res = await fetch(
+                    SUPABASE_URL + '/rest/v1/places?select=*&order=reviews_count.desc.nullslast&limit=100',
+                    { headers: { apikey: SUPABASE_KEY } }
+                );
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const rows = await res.json();
+
+                tbody.replaceChildren();
+                for (const p of rows) {
+                    const tr = document.createElement('tr');
+                    for (const v of [p.title, p.category_name, p.total_score, p.reviews_count, p.city, p.phone]) {
+                        const td = document.createElement('td');
+                        td.textContent = v ?? '-';
+                        tr.appendChild(td);
+                    }
+                    const td = document.createElement('td');
+                    if (p.url && p.url.startsWith('https://')) {
+                        const a = document.createElement('a');
+                        a.href = p.url;
+                        a.target = '_blank';
+                        a.rel = 'noopener';
+                        a.textContent = 'Buka';
+                        td.appendChild(a);
+                    }
+                    tr.appendChild(td);
+                    tbody.appendChild(tr);
+                }
+                if (!rows.length) setPlacesStatus('placesEmpty');
+            } catch (e) {
+                setPlacesStatus('placesError');
+                console.error(e);
+            }
+        }
+
+        // Initialize language and places data
         updateLanguage();
+        setPlacesStatus('placesLoading');
+        loadPlaces();
     </script>
 </body>
 </html>
